@@ -2,7 +2,6 @@
 
 class sqlCmd
 {
-
     public $m_fields = array();
     public $m_values = array();
     public $m_type = array(); //s=string,n=numeric,d=date,l=litteral,b=bool
@@ -19,12 +18,14 @@ class sqlCmd
                 } else {
                     return $v;
                 }
+                // no break
             case "d":
                 if (strlen($v) == 0) {
                     return "null";
                 } else {
                     return "'" . $v . "'";
                 }
+                // no break
             case "b":
                 if (strlen($v) == 0) {
                     return "null";
@@ -35,6 +36,7 @@ class sqlCmd
                         return "FALSE";
                     }
                 }
+                // no break
             case "l":
                 return $v;
         }
@@ -101,7 +103,6 @@ class sqlCmd
 
     public function Clear()
     {
-
         unset($this->m_fields);
         unset($this->m_commands);
         unset($this->m_type);
@@ -116,11 +117,9 @@ class sqlCmd
     {
         return $this->m_command;
     }
-
 }
 interface sqlResult
 {
-
     public function sql_num_rows();
     public function sql_fetch_array($r = null);
     public function sql_fetch_assoc($r = null);
@@ -130,7 +129,6 @@ interface sqlResult
 }
 interface sqlInterface
 {
-
     public function sql_connect($host, $user, $password, $database);
     public function sql_error();
     public function sql_close();
@@ -151,7 +149,6 @@ interface sqlInterface
 
 class mysqlResult implements sqlResult
 {
-
     public $dbRresult = null;
 
     public function __construct($r)
@@ -169,7 +166,6 @@ class mysqlResult implements sqlResult
         if (!is_null($r)) {
             mysqli_data_seek($this->dbRresult, $r);
         }
-
         return mysqli_fetch_array($this->dbRresult);
     }
 
@@ -178,7 +174,6 @@ class mysqlResult implements sqlResult
         if (!is_null($r)) {
             mysqli_data_seek($this->dbRresult, $r);
         }
-
         return mysqli_fetch_assoc($this->dbRresult);
     }
     public function sql_fetch_all()
@@ -195,11 +190,10 @@ class mysqlResult implements sqlResult
     {
         mysqli_free_result($this->dbRresult);
     }
-
 }
+
 class interface_mysql implements sqlInterface
 {
-
     public $dbLink = null;
 
     public function sql_connect($host, $user, $password, $database)
@@ -257,7 +251,6 @@ class interface_mysql implements sqlInterface
         if (!is_null($r)) {
             mysqli_data_seek($result, $r);
         }
-
         return mysqli_fetch_field_direct($result, $field);
     }
     public function sql_fetch_all($result)
@@ -296,6 +289,4 @@ class interface_mysql implements sqlInterface
     {
         return mysqli_insert_id($this->dbLink);
     }
-
 }
-
