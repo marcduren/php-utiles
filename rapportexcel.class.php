@@ -1,4 +1,7 @@
 <?php
+use Vtiful\Kernel\Excel;
+use Vtiful\Kernel\Format;
+
 class RapportExcel
 {
     public $excel = null;
@@ -78,7 +81,11 @@ class RapportExcel
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
         flush();
-        readfile($filePath);
-        exit();
+        if (copy($filePath, 'php://output') === false) {
+            // Throw exception
+        }
+
+        // Delete temporary file
+        @unlink($filePath);
     }
 }

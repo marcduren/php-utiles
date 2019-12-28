@@ -68,7 +68,7 @@ class sqlCmd
 
     public function MakeUpdateQuery($table, $sqlwhere)
     {
-        $this->m_command = "UPDATE $table SET \n";
+        $this->m_command = "UPDATE `$table` SET \n";
         for ($n = 0; $n < count($this->m_fields); $n++) {
             $f = $this->m_fields[$n];
             if ($n > 0) {
@@ -82,7 +82,7 @@ class sqlCmd
 
     public function MakeInsertQuery($table)
     {
-        $this->m_command = "INSERT INTO $table (\n";
+        $this->m_command = "INSERT INTO `$table` (\n";
         for ($n = 0; $n < count($this->m_fields); $n++) {
             if ($n > 0) {
                 $this->m_command .= ",";
