@@ -251,7 +251,7 @@ class interface_mysql implements sqlInterface
         if (!is_null($r)) {
             mysqli_data_seek($result, $r);
         }
-        return mysqli_fetch_field_direct($result, $field);
+        return mysqli_fetch_array($result)[$field];
     }
     public function sql_fetch_all($result)
     {
