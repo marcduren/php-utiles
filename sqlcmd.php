@@ -1,4 +1,7 @@
 <?php
+    /*
+     * auteur : Marc Duren
+     */
 
 class sqlCmd
 {
@@ -16,7 +19,7 @@ class sqlCmd
                 if (strlen($v) === 0 || $v === "NaN") {
                     return 'null';
                 } else {
-                    return $v;
+                    return str_replace(',', '.', $v);
                 }
                 // no break
             case "d":
@@ -58,6 +61,7 @@ class sqlCmd
         }
         return count($this->m_type) - 1;
     }
+
     public function AddNull($tuple)
     {
         $this->m_fields[] = $tuple;
@@ -118,6 +122,7 @@ class sqlCmd
         return $this->m_command;
     }
 }
+
 interface sqlResult
 {
     public function sql_num_rows();
@@ -127,6 +132,7 @@ interface sqlResult
     public function sql_num_fields();
     public function sql_free_result();
 }
+
 interface sqlInterface
 {
     public function sql_connect($host, $user, $password, $database);
@@ -217,6 +223,7 @@ class interface_mysql implements sqlInterface
     {
         return mysqli_query($this->dbLink, $query);
     }
+
     public function sql_result($query)
     {
         $r = mysqli_query($this->dbLink, $query);
@@ -226,6 +233,7 @@ class interface_mysql implements sqlInterface
             return false;
         }
     }
+
     public function sql_num_rows($result)
     {
         return mysqli_num_rows($result);
@@ -253,10 +261,12 @@ class interface_mysql implements sqlInterface
         }
         return mysqli_fetch_array($result)[$field];
     }
+
     public function sql_fetch_all($result)
     {
         return mysqli_fetch_all($result, MYSQLI_ASSOC);
     }
+
     public function sql_num_fields($result)
     {
         return mysqli_num_fields($result);
