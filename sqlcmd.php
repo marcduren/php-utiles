@@ -15,34 +15,34 @@ class sqlCmd
         $v = $this->m_values[$n];
         $t = $this->m_type[$n];
         switch ($t) {
-            case "n":
-                if (strlen($v) === 0 || $v === "NaN") {
-                    return 'null';
+        case "n":
+            if (strlen($v) === 0 || $v === "NaN") {
+                return 'null';
+            } else {
+                return str_replace(',', '.', $v);
+            }
+            // no break
+        case "d":
+            if (strlen($v) == 0) {
+                return "null";
+            } else {
+                return "'" . $v . "'";
+            }
+            // no break
+        case "b":
+            if (strlen($v) == 0) {
+                return "null";
+            } else {
+                if ($v == "t" || $v == "Oui" || $v == "on" || $v == "true" || $v == "TRUE") {
+                    return "TRUE";
                 } else {
-                    return str_replace(',', '.', $v);
+                    return "FALSE";
                 }
-                // no break
-            case "d":
-                if (strlen($v) == 0) {
-                    return "null";
-                } else {
-                    return "'" . $v . "'";
-                }
-                // no break
-            case "b":
-                if (strlen($v) == 0) {
-                    return "null";
-                } else {
-                    if ($v == "t" || $v == "Oui" || $v == "on" || $v == "true" || $v == "TRUE") {
-                        return "TRUE";
-                    } else {
-                        return "FALSE";
-                    }
-                }
-                // no break
-            case "l":
-                return $v;
-        }
+            }
+            // no break
+        case "l":
+            return $v;
+    }
         return "'" . str_replace("'", "''", str_replace("\'", "'", $v)) . "'";
     }
 
