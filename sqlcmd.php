@@ -19,14 +19,14 @@ class sqlCmd
             if (strlen($v) === 0 || $v === "NaN") {
                 return 'null';
             } else {
-                return str_replace(',', '.', $v);
+                return str_replace(',', '.', str_replace(["\'","'"], "", $v));
             }
             // no break
         case "d":
             if (strlen($v) == 0) {
                 return "null";
             } else {
-                return "'" . $v . "'";
+                return "'" . str_replace(["\'","'"], "", $v) . "'";
             }
             // no break
         case "b":
