@@ -24,6 +24,7 @@ class sqlCmd
                 }
                 // no break
             case "d":
+                $v = str_replace(["\'","'"], "", $v); //pas de guillemets
                 if (strlen($v) == 0) {
                     return "null";
                 } else {
@@ -31,6 +32,7 @@ class sqlCmd
                 }
                 // no break
             case "b":
+                $v = str_replace(["\'","'"], "", $v); //pas de guillemets
                 if (strlen($v) == 0) {
                     return "null";
                 } else {
