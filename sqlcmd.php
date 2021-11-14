@@ -16,11 +16,7 @@ class sqlCmd
         $t = $this->m_type[$n];
         switch ($t) {
             case "n":
-            case "d":
-            case "b":
                 $v = str_replace(["\'","'"], "", $v); //pas de guillemets
-                // no break
-            case "n":
                 if (strlen($v) === 0 || $v === "NaN") {
                     return 'null';
                 } else {
