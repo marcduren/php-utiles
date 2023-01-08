@@ -19,18 +19,14 @@ class sqlCmd
                 $v = str_replace(["\'","'"], "", $v); //pas de guillemets
                 if (strlen($v) === 0 || $v === "NaN") {
                     return 'null';
-                } else {
-                    return str_replace(',', '.', $v);
                 }
-                // no break
+                return str_replace(',', '.', $v);
             case "d":
                 $v = str_replace(["\'","'"], "", $v); //pas de guillemets
                 if (strlen($v) == 0) {
                     return "null";
-                } else {
-                    return "'" . $v . "'";
                 }
-                // no break
+                return "'" . $v . "'";
             case "b":
                 $v = str_replace(["\'","'"], "", $v); //pas de guillemets
                 if (strlen($v) == 0) {
@@ -38,11 +34,9 @@ class sqlCmd
                 } else {
                     if ($v == "t" || $v == "Oui" || $v == "on" || $v == "true" || $v == "TRUE") {
                         return "TRUE";
-                    } else {
-                        return "FALSE";
                     }
                 }
-                // no break
+                return "FALSE";
             case "l":
                 return $v;
         }
