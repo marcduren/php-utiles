@@ -8,7 +8,7 @@ class sqlCmd
     public $m_fields = array();
     public $m_values = array();
     public $m_type = array(); //s=string,n=numeric,d=date,l=litteral,b=bool
-    protected $m_command;
+    protected $m_command = "";
 
     protected function formated($n)
     {
@@ -50,11 +50,7 @@ class sqlCmd
         $this->m_fields[] = $tuple;
         $this->m_values[] = $valeur;
         if ($type == "") { //auto
-            if (is_numeric($valeur)) {
-                $this->m_type[] = "n";
-            } else {
-                $this->m_type[] = "s";
-            }
+        $this->m_type[] = is_numeric($valeur) ? "n" : "s";
         } else {
             $this->m_type[] = $type;
         }
@@ -106,10 +102,6 @@ class sqlCmd
 
     public function Clear()
     {
-        unset($this->m_fields);
-        unset($this->m_commands);
-        unset($this->m_type);
-        unset($this->m_command);
         $this->m_fields = array();
         $this->m_values = array();
         $this->m_type = array();
@@ -154,46 +146,49 @@ interface sqlInterface
 
 class mysqlResult implements sqlResult
 {
-    public $dbRresult = null;
+    public $dbResult = null;
 
     public function __construct($r)
     {
-        $this->dbRresult = $r;
+        $this->dbResult = $r;
     }
 
     public function sql_num_rows()
     {
-        return mysqli_num_rows($this->dbRresult);
+        return mysqli_num_rows($this->dbResult);
     }
 
     public function sql_fetch_array($r = null)
     {
         if (!is_null($r)) {
-            mysqli_data_seek($this->dbRresult, $r);
+            mysqli_data_seek($this->dbResult, $r);
         }
-        return mysqli_fetch_array($this->dbRresult);
+        return mysqli_fetch_array($this->dbResult);
     }
 
     public function sql_fetch_assoc($r = null)
     {
         if (!is_null($r)) {
-            mysqli_data_seek($this->dbRresult, $r);
+            mysqli_data_seek($this->dbResult, $r);
         }
-        return mysqli_fetch_assoc($this->dbRresult);
+        return mysqli_fetch_assoc($this->dbResult);
     }
     public function sql_fetch_all()
     {
-        return mysqli_fetch_all($this->dbRresult, MYSQLI_ASSOC);
+        return mysqli_fetch_all($this->dbResult, MYSQLI_ASSOC);
     }
 
     public function sql_num_fields()
     {
-        return mysqli_num_fields($this->dbRresult);
+        return mysqli_num_fields($this->dbResult);
     }
 
     public function sql_free_result()
     {
-        mysqli_free_result($this->dbRresult);
+        if ($this->dbResult !== null) {
+            mysqli_free_result($this->dbResult);
+            $this->dbResult = null;
+        }
     }
 }
 
@@ -215,7 +210,10 @@ class interface_mysql implements sqlInterface
 
     public function sql_close()
     {
-        mysqli_close($this->dbLink);
+        if ($this->dbLink) {
+            mysqli_close($this->dbLink);
+        }
+        $this->dbLink = null;
     }
 
     public function sql_query($query)
