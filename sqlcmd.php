@@ -19,10 +19,8 @@ class sqlCmd
                 $v = str_replace(["\'", "'"], "", $v); //pas de guillemets
                 if (strlen($v) === 0 || $v === "NaN") {
                     return 'null';
-                } else {
-                    return str_replace(',', '.', $v);
                 }
-                // no break
+                return str_replace(',', '.', $v);
             case "d":
                 $v = str_replace(["\'", "'"], "", $v); //pas de guillemets
                 if (strlen($v) == 0) {
@@ -67,36 +65,22 @@ class sqlCmd
 
     public function MakeUpdateQuery($table, $sqlwhere)
     {
-        $this->m_command = "UPDATE `$table` SET \n";
+        $sets = array();
         for ($n = 0; $n < count($this->m_fields); $n++) {
-            $f = $this->m_fields[$n];
-            if ($n > 0) {
-                $this->m_command .= ",\n";
-            }
-            $this->m_command .= "$f=" . $this->formated($n);
+            $sets[] = $this->m_fields[$n] . "=" . $this->formated($n);
         }
-        $this->m_command .= " \nWHERE $sqlwhere";
+        $this->m_command = "UPDATE $table SET \n" . implode(",\n", $sets) . " WHERE $sqlwhere";
         return $this->m_command;
     }
 
     public function MakeInsertQuery($table)
     {
-        $this->m_command = "INSERT INTO `$table` (\n";
-        for ($n = 0; $n < count($this->m_fields); $n++) {
-            if ($n > 0) {
-                $this->m_command .= ",";
-            }
-            $this->m_command .= $this->m_fields[$n];
-        }
-        $this->m_command .= ") \nVALUES (";
+        $values = array();
         for ($n = 0; $n < count($this->m_values); $n++) {
-            if ($n > 0) {
-                $this->m_command .= ",";
-            }
-            $this->m_command .= $this->formated($n);
+            $values[] = $this->formated($n);
         }
-
-        $this->m_command .= ")\n";
+        $this->m_command = "INSERT INTO $table (\n" . implode(",", $this->m_fields)
+            . ") VALUES (" . implode(",", $values) . ")\n";
         return $this->m_command;
     }
 
