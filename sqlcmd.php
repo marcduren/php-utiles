@@ -50,7 +50,7 @@ class sqlCmd
         $this->m_fields[] = $tuple;
         $this->m_values[] = $valeur;
         if ($type == "") { //auto
-        $this->m_type[] = is_numeric($valeur) ? "n" : "s";
+            $this->m_type[] = is_numeric($valeur) ? "n" : "s";
         } else {
             $this->m_type[] = $type;
         }
