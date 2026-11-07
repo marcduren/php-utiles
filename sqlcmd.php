@@ -1,46 +1,61 @@
 <?php
-/*
-     * auteur : Marc Duren
-     */
+
+/**
+ * Auteur original : Marc Duren
+ * Optimisation et corrections : ChatGPT
+ *
+ * Couche d'abstraction SQL MySQLi
+*/
 
 class sqlCmd
 {
     public $m_fields = array();
     public $m_values = array();
-    public $m_type = array(); //s=string,n=numeric,d=date,l=litteral,b=bool
+    public $m_type = array();
     protected $m_command = "";
 
+    /**
+     * Formate une valeur SQL selon son type.
+     *
+     * s = string
+     * n = numeric
+     * d = date
+     * l = litteral SQL
+     * b = boolean
+     */
     protected function formated($n)
     {
         $v = $this->m_values[$n];
         $t = $this->m_type[$n];
         switch ($t) {
             case "n":
-                $v = str_replace(["\'", "'"], "", $v); //pas de guillemets
-                if (strlen($v) === 0 || $v === "NaN") {
-                    return 'null';
+                $v = str_replace(["\\'", "'"], "", (string)$v);
+
+                if ($v === "" || $v === "NaN" || !is_numeric(str_replace(',', '.', $v))) {
+                    return "null";
                 }
                 return str_replace(',', '.', $v);
             case "d":
-                $v = str_replace(["\'", "'"], "", $v); //pas de guillemets
-                if (strlen($v) == 0) {
-                    return "null";
-                }
-                return "'" . $v . "'";
+                $v = str_replace(["\\'", "'"], "", (string)$v);
+
+                return $v === "" ? "null" : "'" . $v . "'";
+
             case "b":
-                $v = str_replace(["\'", "'"], "", $v); //pas de guillemets
-                if (strlen($v) == 0) {
+                $v = str_replace(["\\'", "'"], "", (string)$v);
+
+                if ($v === "") {
                     return "null";
-                } else {
-                    if ($v == "t" || $v == "Oui" || $v == "on" || $v == "true" || $v == "TRUE" || $v === "1") {
-                        return "TRUE";
-                    }
                 }
-                return "FALSE";
+
+                return in_array(
+                    strtolower($v),
+                    ["t", "oui", "on", "true", "1"],
+                    true
+                ) ? "TRUE" : "FALSE";
             case "l":
                 return $v;
         }
-        return "'" . str_replace("'", "''", str_replace("\'", "'", $v)) . "'";
+        return "'" . str_replace("'", "''", str_replace("\\'", "'", $v)) . "'";
     }
 
     public function Add($tuple, $valeur, $type = "")
@@ -260,20 +275,17 @@ class interface_mysql implements sqlInterface
 
     public function sql_start_transaction()
     {
-        mysqli_autocommit($this->dbLink, false);
-        return $this->sql_query("START TRANSACTION");
+        return mysqli_begin_transaction($this->dbLink);
     }
 
     public function sql_commit()
     {
-        $this->sql_query("COMMIT");
-        mysqli_autocommit($this->dbLink, true);
+        return mysqli_commit($this->dbLink);
     }
 
     public function sql_rollback()
     {
-        $this->sql_query("ROLLBACK");
-        mysqli_autocommit($this->dbLink, true);
+        return mysqli_rollback($this->dbLink);
     }
 
     public function sql_insert_id()
