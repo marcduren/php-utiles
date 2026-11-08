@@ -5,7 +5,7 @@
  * Optimisation et corrections : ChatGPT
  *
  * Couche d'abstraction SQL MySQLi
-*/
+     */
 
 class sqlCmd
 {
@@ -13,6 +13,9 @@ class sqlCmd
     public $m_values = array();
     public $m_type = array();
     protected $m_command = "";
+    protected $m_params = array();
+    protected $m_param_types = "";
+    protected $m_is_prepared = array();
 
     /**
      * Formate une valeur SQL selon son type.
@@ -67,6 +70,7 @@ class sqlCmd
         } else {
             $this->m_type[] = $type;
         }
+        $this->m_is_prepared[] = false;
         return count($this->m_type) - 1;
     }
 
@@ -75,16 +79,73 @@ class sqlCmd
         $this->m_fields[] = $tuple;
         $this->m_values[] = "null";
         $this->m_type[] = "l";
+        $this->m_is_prepared[] = false;
         return count($this->m_type) - 1;
+    }
+    /**
+     * Ajoute un champ destiné à une requête préparée.
+     *
+     * Types :
+     * s = string
+     * i = integer
+     * d = double
+     * b = blob
+     */
+    public function AddP($tuple, $valeur, $type = "s") // Ajoute un champ préparé
+    {
+        $allowed = ["s", "i", "d", "b"];
+
+        if (!in_array($type, $allowed, true)) {
+            throw new InvalidArgumentException("Type SQL invalide : " . $type);
+        }
+
+        $this->m_fields[] = $tuple;
+        $this->m_values[] = $valeur;
+        $this->m_type[] = $type;
+        $this->m_is_prepared[] = true;
+
+        return count($this->m_type) - 1;
+    }
+    public function GetParams()
+    {
+        $params = array();
+
+        foreach ($this->m_values as $n => $value) {
+            if ($this->m_is_prepared[$n]) {
+                $params[] = $value;
+            }
+        }
+        return $params;
+    }
+    public function GetParamTypes()
+    {
+        $types = "";
+
+        foreach ($this->m_type as $n => $type) {
+            if ($this->m_is_prepared[$n]) {
+                $types .= $type;
+            }
+        }
+
+        return $types;
+    }
+    public function IsPrepared()
+    {
+        return in_array(true, $this->m_is_prepared, true);
     }
 
     public function MakeUpdateQuery($table, $sqlwhere)
     {
         $sets = array();
-        for ($n = 0; $n < count($this->m_fields); $n++) {
-            $sets[] = $this->m_fields[$n] . "=" . $this->formated($n);
+        foreach ($this->m_fields as $n => $field) {
+            $value = $this->m_is_prepared[$n]
+                ? "?"
+                : $this->formated($n);
+
+            $sets[] = $field . "=" . $value;
         }
-        $this->m_command = "UPDATE $table SET \n" . implode(",\n", $sets) . " WHERE $sqlwhere";
+
+        $this->m_command = "UPDATE " . $table . " SET \n" . implode(",\n", $sets) . " WHERE " . $sqlwhere;
         return $this->m_command;
     }
 
@@ -92,7 +153,9 @@ class sqlCmd
     {
         $values = array();
         for ($n = 0; $n < count($this->m_values); $n++) {
-            $values[] = $this->formated($n);
+            $values[] = $this->m_is_prepared[$n]
+                ? "?"
+                : $this->formated($n);
         }
         $this->m_command = "INSERT INTO $table (\n" . implode(",", $this->m_fields)
             . ") VALUES (" . implode(",", $values) . ")\n";
@@ -105,6 +168,9 @@ class sqlCmd
         $this->m_values = array();
         $this->m_type = array();
         $this->m_command = "";
+        $this->m_is_prepared = array();
+        $this->m_params = array();
+        $this->m_param_types = "";
     }
 
     public function GetSQL()
@@ -128,7 +194,16 @@ interface sqlInterface
     public function sql_connect($host, $user, $password, $database);
     public function sql_error();
     public function sql_close();
-    public function sql_query($query);
+    /**
+     * Exécute une requête, préparée ou non.
+     *
+     * @param string $query  SQL, avec des "?" pour les paramètres préparés
+     * @param string $types  Types des paramètres ("s", "i", "d", "b"), ex. "sis"
+     * @param array  $params Valeurs des paramètres, dans l'ordre des "?"
+     * @return mysqli_result|bool Résultat pour un SELECT, true pour une écriture, false en cas d'échec
+     */
+    public function sql_query(string $query, string $types = "", array $params = array());
+    public function sql_query_cmd(sqlcmd $cmd);
     public function sql_result($query); //return sqlResult
     public function sql_num_rows($result);
     public function sql_fetch_array($result, $r = null);
@@ -215,9 +290,66 @@ class interface_mysql implements sqlInterface
         $this->dbLink = null;
     }
 
-    public function sql_query($query)
+    public function sql_query($query, $types = "", $params = array())
     {
-        return mysqli_query($this->dbLink, $query);
+        if (!$this->dbLink) {
+            return false;
+        }
+
+        // Ancien fonctionnement : requête classique.
+        if ($types === "" && empty($params)) {
+            return mysqli_query($this->dbLink, $query);
+        }
+
+        // Vérification des paramètres.
+        if (strlen($types) !== count($params)) {
+            return false;
+        }
+
+        $stmt = mysqli_prepare($this->dbLink, $query);
+
+        if (!$stmt) {
+            return false;
+        }
+
+        if (!empty($params)) {
+            $bindParams = array();
+            foreach ($params as $n => &$value) {
+                $bindParams[$n] = &$value;
+            }
+            unset($value);
+            if (!mysqli_stmt_bind_param(
+                $stmt,
+                $types,
+                ...$bindParams
+            )) {
+                mysqli_stmt_close($stmt);
+                return false;
+            }
+        }
+
+        if (!mysqli_stmt_execute($stmt)) {
+            mysqli_stmt_close($stmt);
+            return false;
+        }
+
+        // Requête retournant des résultats.
+        if ($stmt->field_count > 0) {
+            $result = mysqli_stmt_get_result($stmt);
+
+            if ($result === false) {
+                mysqli_stmt_close($stmt);
+                return false;
+            }
+
+            mysqli_stmt_close($stmt);
+
+            return $result;
+        }
+
+        mysqli_stmt_close($stmt);
+
+        return true;
     }
 
     public function sql_result($query)
@@ -291,5 +423,13 @@ class interface_mysql implements sqlInterface
     public function sql_insert_id()
     {
         return mysqli_insert_id($this->dbLink);
+    }
+    public function sql_query_cmd(sqlcmd $cmd)
+    {
+        return $this->sql_query(
+            $cmd->GetSQL(),
+            $cmd->GetParamTypes(),
+            $cmd->GetParams()
+        );
     }
 }
