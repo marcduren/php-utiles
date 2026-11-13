@@ -203,7 +203,7 @@ interface sqlInterface
      * @return mysqli_result|bool Résultat pour un SELECT, true pour une écriture, false en cas d'échec
      */
     public function sql_query(string $query, string $types = "", array $params = array());
-    public function sql_query_cmd(sqlcmd $cmd);
+    public function sql_query_params(sqlcmd $cmd);
     public function sql_result($query); //return sqlResult
     public function sql_num_rows($result);
     public function sql_fetch_array($result, $r = null);
@@ -424,7 +424,7 @@ class interface_mysql implements sqlInterface
     {
         return mysqli_insert_id($this->dbLink);
     }
-    public function sql_query_cmd(sqlcmd $cmd)
+    public function sql_query_params(sqlcmd $cmd)
     {
         return $this->sql_query(
             $cmd->GetSQL(),
